@@ -95,14 +95,25 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
     }
 
     // if fee is on, mint liquidity equivalent to 1/6th of the growth in sqrt(k)
+    //mint fee 费用发到factory设置的feeto中；
     function _mintFee(uint112 _reserve0, uint112 _reserve1) private returns (bool feeOn) {
         address feeTo = IUniswapV2Factory(factory).feeTo();
         feeOn = feeTo != address(0);
+        //将K值读取到Memory，后续操作节省gas；
         uint _kLast = kLast; // gas savings
         if (feeOn) {
             if (_kLast != 0) {
+                //rootK可以认为是Pair的总价值，作为总价值，需要满足：
+                // 在添加或者移动流动性时，保证总价值(V)，V-1/V-2 = T0-1/T0-2,V-1/V-2 = T1-1/T1-2,
+                //目的是为了保证在添加或者移除流动性时，价值平均分配，否则先后去除或添加流动性的用户，获得或支付Token不同；
+                // reserve0 * reserve1 = K; 
+                //根据上面原则我们知道sqrt(T0*T1)*C = V,C为固定数值，如此我们把C定为1，便得出V可以用sqrt(T0*T1)表示；
+
+                //计算目前Rootk
                 uint rootK = Math.sqrt(uint(_reserve0).mul(_reserve1));
+                //计算LastK
                 uint rootKLast = Math.sqrt(_kLast);
+                //计算手续费，手续费为0.3/100*1/6
                 if (rootK > rootKLast) {
                     uint numerator = totalSupply.mul(rootK.sub(rootKLast));
                     uint denominator = rootK.mul(5).add(rootKLast);
