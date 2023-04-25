@@ -113,7 +113,16 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
                 uint rootK = Math.sqrt(uint(_reserve0).mul(_reserve1));
                 //计算LastK
                 uint rootKLast = Math.sqrt(_kLast);
-                //计算手续费，手续费为0.3/100*1/6
+                //计算手续费，手续费为0.3/100 * 1/6
+                //首先，不能简单地计算手续费为1/6*(rootk-rootkLast);因为这是价值占比；
+                //uniswapV2中手续费是使用LP收取的，所以计算LP占比：
+                /*
+                *        FeeLp                 1/6*Value
+                *     -------------  =  ------------------------  
+                *      totalSupply        5/6*Value + rootkLast         其中：Value = rootk -rootkLast
+                *
+                * 计算后就是下面的公式；
+                */
                 if (rootK > rootKLast) {
                     uint numerator = totalSupply.mul(rootK.sub(rootKLast));
                     uint denominator = rootK.mul(5).add(rootKLast);
@@ -127,6 +136,7 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
     }
 
     // this low-level function should be called from a contract which performs important safety checks
+    //mint LP
     function mint(address to) external lock returns (uint liquidity) {
         (uint112 _reserve0, uint112 _reserve1,) = getReserves(); // gas savings
         uint balance0 = IERC20(token0).balanceOf(address(this));
