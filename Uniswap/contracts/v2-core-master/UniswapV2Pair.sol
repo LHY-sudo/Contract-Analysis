@@ -254,7 +254,7 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
     }
 
     // force balances to match reserves
-    //把多余的Token转发到指定地址，使储备量等于余额；
+    //强制把多余的Token转发到指定地址，使储备量等于余额；
     function skim(address to) external lock {
         address _token0 = token0; // gas savings
         address _token1 = token1; // gas savings
@@ -263,7 +263,7 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
     }
 
     // force reserves to match balances
-    //使储备量等于余额
+    //强制使储备量等于余额
     function sync() external lock {
         _update(IERC20(token0).balanceOf(address(this)), IERC20(token1).balanceOf(address(this)), reserve0, reserve1);
     }
