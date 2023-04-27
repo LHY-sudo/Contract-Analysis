@@ -51,7 +51,17 @@ library UniswapV2Library {
     }
 
     // given an input amount of an asset and pair reserves, returns the maximum output amount of the other asset
-    //
+    //计算收取手续费后的代币
+    /*
+    *
+    *    in*997          in*997 + 1000*reservein
+    *  ---------   =  ---------------------------
+    *     out                reserveout
+    * 
+    * 这里有个特点，这里计算的价格时算入用户支付Token对价格的影响的，而不是随时查询的价格；
+    * 
+    * 
+    */
     function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut) internal pure returns (uint amountOut) {
         require(amountIn > 0, 'UniswapV2Library: INSUFFICIENT_INPUT_AMOUNT');
         require(reserveIn > 0 && reserveOut > 0, 'UniswapV2Library: INSUFFICIENT_LIQUIDITY');
