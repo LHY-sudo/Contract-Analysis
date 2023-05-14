@@ -10,11 +10,13 @@ import './interfaces/IERC20.sol';
 import './interfaces/IWETH.sol';
 
 contract UniswapV2Router02 is IUniswapV2Router02 {
+    //0.8以前应使用计算库；
     using SafeMath for uint;
 
     address public immutable override factory;
     address public immutable override WETH;
 
+    //函数修改器，确保deadline有效期；
     modifier ensure(uint deadline) {
         require(deadline >= block.timestamp, 'UniswapV2Router: EXPIRED');
         _;
@@ -25,11 +27,15 @@ contract UniswapV2Router02 is IUniswapV2Router02 {
         WETH = _WETH;
     }
 
+    //仅接受来自Weth合约的转账
     receive() external payable {
         assert(msg.sender == WETH); // only accept ETH via fallback from the WETH contract
     }
 
     // **** ADD LIQUIDITY ****
+    //添加流动性
+    //内部函数Internal
+    //仅计算；
     function _addLiquidity(
         address tokenA,
         address tokenB,
@@ -39,18 +45,31 @@ contract UniswapV2Router02 is IUniswapV2Router02 {
         uint amountBMin
     ) internal virtual returns (uint amountA, uint amountB) {
         // create the pair if it doesn't exist yet
+        //检查是否创建了交易对是否已经创建了流动性，如果没有就创建。
         if (IUniswapV2Factory(factory).getPair(tokenA, tokenB) == address(0)) {
             IUniswapV2Factory(factory).createPair(tokenA, tokenB);
         }
+        //获取对应token的余额；
+        //这里并未直接调用Pair中的getreserve，因为我们输入的TokenA/B并未进行排序，Pair中的函数时返回排序后的reserve，
+        //Library中的函数会对TokenA/B进行排序，直接调用Pair会出现储备颠倒的情况；
         (uint reserveA, uint reserveB) = UniswapV2Library.getReserves(factory, tokenA, tokenB);
+        //检查储备是否为零
         if (reserveA == 0 && reserveB == 0) {
+            //如果为零则强制输Token数量等于期待数目；
+            //首次添加流动性；
             (amountA, amountB) = (amountADesired, amountBDesired);
         } else {
+            //非首次添加LP;
+            //根据TokenA的数目求出当前价格所需的TokenB的数目；
             uint amountBOptimal = UniswapV2Library.quote(amountADesired, reserveA, reserveB);
+            //查看所需TokenB的数目是否小于等于期望的TokenB数目
             if (amountBOptimal <= amountBDesired) {
+                //TokenB的数目必须大于最小值；
                 require(amountBOptimal >= amountBMin, 'UniswapV2Router: INSUFFICIENT_B_AMOUNT');
+                //更新TokenA/B的数目；
                 (amountA, amountB) = (amountADesired, amountBOptimal);
             } else {
+                //逻辑如上
                 uint amountAOptimal = UniswapV2Library.quote(amountBDesired, reserveB, reserveA);
                 assert(amountAOptimal <= amountADesired);
                 require(amountAOptimal >= amountAMin, 'UniswapV2Router: INSUFFICIENT_A_AMOUNT');
@@ -58,6 +77,9 @@ contract UniswapV2Router02 is IUniswapV2Router02 {
             }
         }
     }
+
+    //外部函数，对外接口；
+    //ensure确保Deadline必须大于当前区块时间戳,ensure(uint deadline);
     function addLiquidity(
         address tokenA,
         address tokenB,
@@ -68,12 +90,17 @@ contract UniswapV2Router02 is IUniswapV2Router02 {
         address to,
         uint deadline
     ) external virtual override ensure(deadline) returns (uint amountA, uint amountB, uint liquidity) {
+        //获取添加流动性时所需的token数目；
         (amountA, amountB) = _addLiquidity(tokenA, tokenB, amountADesired, amountBDesired, amountAMin, amountBMin);
+       //获得Pair交易对地址;
         address pair = UniswapV2Library.pairFor(factory, tokenA, tokenB);
+        //转移代币到Pair;
         TransferHelper.safeTransferFrom(tokenA, msg.sender, pair, amountA);
         TransferHelper.safeTransferFrom(tokenB, msg.sender, pair, amountB);
+        //mint流动性LP Token;
         liquidity = IUniswapV2Pair(pair).mint(to);
     }
+    //
     function addLiquidityETH(
         address token,
         uint amountTokenDesired,

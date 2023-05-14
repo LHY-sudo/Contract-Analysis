@@ -37,12 +37,23 @@ library UniswapV2Library {
         (address token0,) = sortTokens(tokenA, tokenB);
         //调用Pair的getReaerve()函数；
         (uint reserve0, uint reserve1,) = IUniswapV2Pair(pairFor(factory, tokenA, tokenB)).getReserves();
-        //合约地址
+        //Token
+        
+        
+        
+        
+        
+        
+        
+        储备数量对应合约地址
         (reserveA, reserveB) = tokenA == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
     }
 
     // given some amount of an asset and pair reserves, returns an equivalent amount of the other asset
     //计算交换应得Token数量
+    //没有考虑手续费
+    //没有考虑用户支付Token对价格的影响
+    //添加流动性使用；
     function quote(uint amountA, uint reserveA, uint reserveB) internal pure returns (uint amountB) {
         //计算应该收到多啊少TokenB
         require(amountA > 0, 'UniswapV2Library: INSUFFICIENT_AMOUNT');
@@ -58,7 +69,7 @@ library UniswapV2Library {
     *  ---------   =  ---------------------------
     *     out                reserveout
     * 
-    * 这里有个特点，这里计算的价格时算入用户支付Token对价格的影响的，而不是随时查询的价格；
+    * 这里有个特点，这里计算的价格是算入用户支付Token对价格的影响的，而不是随时查询的价格；
     * 
     * 
     */
@@ -72,6 +83,8 @@ library UniswapV2Library {
     }
 
     // given an output amount of an asset and pair reserves, returns a required input amount of the other asset
+    //根据输出来比数量计算用户应该支付的Token数量
+    //算法与上面函数相同。
     function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut) internal pure returns (uint amountIn) {
         require(amountOut > 0, 'UniswapV2Library: INSUFFICIENT_OUTPUT_AMOUNT');
         require(reserveIn > 0 && reserveOut > 0, 'UniswapV2Library: INSUFFICIENT_LIQUIDITY');
@@ -81,9 +94,13 @@ library UniswapV2Library {
     }
 
     // performs chained getAmountOut calculations on any number of pairs
+    //根据给予的路径计算出当给与amountin数量的Token时，应该获得多少对应的Token;
+    //路径必须大于2，因为小于2会revert，等于2，不如上面函数节省Gas；
     function getAmountsOut(address factory, uint amountIn, address[] memory path) internal view returns (uint[] memory amounts) {
         require(path.length >= 2, 'UniswapV2Library: INVALID_PATH');
         amounts = new uint[](path.length);
+
+        
         amounts[0] = amountIn;
         for (uint i; i < path.length - 1; i++) {
             (uint reserveIn, uint reserveOut) = getReserves(factory, path[i], path[i + 1]);
@@ -92,6 +109,7 @@ library UniswapV2Library {
     }
 
     // performs chained getAmountIn calculations on any number of pairs
+    //根据给予的路径计算出当获得amountont数量的Token时，应该给予多少对应的Token;
     function getAmountsIn(address factory, uint amountOut, address[] memory path) internal view returns (uint[] memory amounts) {
         require(path.length >= 2, 'UniswapV2Library: INVALID_PATH');
         amounts = new uint[](path.length);
