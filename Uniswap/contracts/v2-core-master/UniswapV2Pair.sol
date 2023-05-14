@@ -173,7 +173,7 @@ contract UniswapV2Pair is IUniswapV2Pair, UniswapV2ERC20 {
     }
 
     // this low-level function should be called from a contract which performs important safety checks
-    //销毁LP
+    //销毁LP,移除流动性；
     function burn(address to) external lock returns (uint amount0, uint amount1) {
         //获取最新储备量；
         (uint112 _reserve0, uint112 _reserve1,) = getReserves(); // gas savings
