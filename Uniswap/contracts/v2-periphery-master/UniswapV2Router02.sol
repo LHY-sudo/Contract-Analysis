@@ -100,7 +100,7 @@ contract UniswapV2Router02 is IUniswapV2Router02 {
         //mint流动性LP Token;
         liquidity = IUniswapV2Pair(pair).mint(to);
     }
-    //
+    //添加Token和ETH交易对
     function addLiquidityETH(
         address token,
         uint amountTokenDesired,
@@ -109,6 +109,8 @@ contract UniswapV2Router02 is IUniswapV2Router02 {
         address to,
         uint deadline
     ) external virtual override payable ensure(deadline) returns (uint amountToken, uint amountETH, uint liquidity) {
+        //计算所需的Token;
+        //以WEth表示eth的合约；
         (amountToken, amountETH) = _addLiquidity(
             token,
             WETH,
@@ -117,8 +119,10 @@ contract UniswapV2Router02 is IUniswapV2Router02 {
             amountTokenMin,
             amountETHMin
         );
+        //转移Token
         address pair = UniswapV2Library.pairFor(factory, token, WETH);
         TransferHelper.safeTransferFrom(token, msg.sender, pair, amountToken);
+        //对于Eth
         IWETH(WETH).deposit{value: amountETH}();
         assert(IWETH(WETH).transfer(pair, amountETH));
         liquidity = IUniswapV2Pair(pair).mint(to);
