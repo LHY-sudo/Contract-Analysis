@@ -122,15 +122,17 @@ contract UniswapV2Router02 is IUniswapV2Router02 {
         //转移Token
         address pair = UniswapV2Library.pairFor(factory, token, WETH);
         TransferHelper.safeTransferFrom(token, msg.sender, pair, amountToken);
-        //对于Eth
+        //对于Eth,首先转化为WEth，然后在转移；
         IWETH(WETH).deposit{value: amountETH}();
         assert(IWETH(WETH).transfer(pair, amountETH));
         liquidity = IUniswapV2Pair(pair).mint(to);
         // refund dust eth, if any
+        //退回未使用的eth；
         if (msg.value > amountETH) TransferHelper.safeTransferETH(msg.sender, msg.value - amountETH);
     }
 
     // **** REMOVE LIQUIDITY ****
+    //移除流动性
     function removeLiquidity(
         address tokenA,
         address tokenB,
